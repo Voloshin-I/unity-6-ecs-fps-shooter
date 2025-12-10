@@ -6,6 +6,9 @@ namespace FPSCore
 {
     // Компонент для игрока
     public struct PlayerTag : IComponentData {}
+    
+    // Enemy component
+    public struct EnemyTag : IComponentData {}
 
     // Компонент здоровья
     public struct Health : IComponentData
@@ -17,7 +20,8 @@ namespace FPSCore
     // Компонент движения
     public struct Movement : IComponentData
     {
-        public float Speed;
+        public float MoveSpeed;
+        public float LookSpeed;
         public float3 Velocity;
         public bool IsGrounded;
     }
@@ -29,15 +33,7 @@ namespace FPSCore
         public bool IsJumping;
     }
 
-    // Компонент оружия
-    public struct Weapon : IComponentData
-    {
-        public Entity WeaponEntity;
-        public float FireRate;
-        public float Damage;
-        public float LastFireTime;
-        public bool IsShooting;
-    }
+    
 
     // Компонент для перезагрузки игры
     public struct GameRestart : IComponentData
