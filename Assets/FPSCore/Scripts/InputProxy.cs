@@ -8,12 +8,24 @@ namespace FPSCore
     [DisallowMultipleComponent]
     public class InputProxy : MonoBehaviour
     {
-        public InputActionAsset actions; // assign the InputActions asset
-        public string mapName = "Player";
-        
-        InputActionMap map;
+        [SerializeField] private InputActionAsset _actions;
+        [SerializeField] private string _mapName = "Player";
 
-        void OnEnable()
+        private const string MoveActionName = "Move";
+        private const string LookActionName = "Look";
+        private const string FireActionName = "Fire";
+        private const string PickupActionName = "Pickup";
+        private const string DropActionName = "Drop";
+        private const string LegacyVerticalAxis = "Vertical";
+        private const string LegacyHorizontalAxis = "Horizontal";
+        private const string LegacyMouseXAxis = "Mouse X";
+        private const string LegacyMouseYAxis = "Mouse Y";
+
+        private InputActionMap _map;
+        private EntityManager _entityManager;
+        private Entity _inputEntity;
+
+        private void OnEnable()
         {
             _entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
             
@@ -30,36 +42,35 @@ namespace FPSCore
             }
 
             // initialize input actions map
-            if (actions != null)
+            if (_actions != null)
             {
-                map = actions.FindActionMap(mapName);
-                if (map != null)
-                    map.Enable();
+                _map = _actions.FindActionMap(_mapName);
+                if (_map != null)
+                    _map.Enable();
             }
         }
 
-        void OnDisable()
+        private void OnDisable()
         {
-            if (map != null) map.Disable();
+            if (_map != null) _map.Disable();
         }
 
-        void Update()
+        private void Update()
         {
             if (_inputEntity == Entity.Null) return;
             InputState inputState = _entityManager.GetComponentData<InputState>(_inputEntity);
             
-            if (map != null)
+            if (_map != null)
             {
-                InputAction moveAction = map.FindAction("Move");
-                InputAction lookAction = map.FindAction("Look");
-                InputAction fireAction = map.FindAction("Fire");
-                InputAction pickupAction = map.FindAction("Pickup");
-                InputAction dropAction = map.FindAction("Drop");
+                InputAction moveAction = _map.FindAction(MoveActionName);
+                InputAction lookAction = _map.FindAction(LookActionName);
+                InputAction fireAction = _map.FindAction(FireActionName);
+                InputAction pickupAction = _map.FindAction(PickupActionName);
+                InputAction dropAction = _map.FindAction(DropActionName);
 
                 if (moveAction != null)
                 {
                     Vector2 move = moveAction.ReadValue<Vector2>();
-                    move.x *= -1;
                     inputState.Move = move;
                 }
                 if (lookAction != null)
@@ -73,9 +84,10 @@ namespace FPSCore
             }
             else
             {
-// fallback to old Input (useful for quick testing)
-                inputState.Move = new Vector2(Input.GetAxisRaw("Vertical"), Input.GetAxisRaw("Horizontal"));
-                inputState.Look = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+                // fallback to old Input (useful for quick testing)
+                //inputState.Move = new Vector2(Input.GetAxisRaw(LegacyVerticalAxis), Input.GetAxisRaw(LegacyHorizontalAxis));                inputState.Move = new Vector2(Input.GetAxisRaw(LegacyVerticalAxis), Input.GetAxisRaw(LegacyHorizontalAxis));
+                inputState.Move = new Vector2(Input.GetAxisRaw(LegacyHorizontalAxis), Input.GetAxisRaw(LegacyVerticalAxis));
+                inputState.Look = new Vector2(Input.GetAxis(LegacyMouseXAxis), Input.GetAxis(LegacyMouseYAxis));
                 inputState.Fire = Input.GetMouseButtonDown(0);
                 inputState.Pickup = Input.GetKeyDown(KeyCode.E);
                 inputState.Drop = Input.GetKeyDown(KeyCode.G);
@@ -83,9 +95,6 @@ namespace FPSCore
             
             _entityManager.SetComponentData(_inputEntity, inputState);
         }
-
-        private EntityManager _entityManager;
-        private Entity _inputEntity;
     }
     
     public struct InputState : IComponentData

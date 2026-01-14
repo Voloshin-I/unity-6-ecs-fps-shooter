@@ -1,51 +1,33 @@
-﻿using Unity.Entities;
-using Unity.Transforms;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FPSCore
 {
+    /// <summary>
+    /// Simple camera follower. Attach to the main camera.
+    /// Set 'anchor' to the transform the camera should follow (e.g. CameraAnchor inside PlayerView).
+    /// Since PlayerView already interpolates, camera just copies the anchor transform in LateUpdate.
+    /// </summary>
     public class CameraTransformController : MonoBehaviour
     {
-        private EntityManager entityManager;
-        private Entity cameraEntity;
-        private bool found;
+        [Tooltip("The transform to follow. If null, will try to find CameraAnchorAuthoring.")]
+        [SerializeField] private Transform _anchor;
 
-        void Start()
+        private void LateUpdate()
         {
-            entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
-        }
+            if (_anchor == null)
+            {
+                // Try to find anchor by component
+                var anchorAuth = FindAnyObjectByType<CameraAnchorAuthoring>();
+                if (anchorAuth != null)
+                    _anchor = anchorAuth.transform;
+            }
 
-        void LateUpdate()
-        {
-            if (!found)
-            {
-                if (EntityUtils.TryFindEntityWith<CameraTag>(World.DefaultGameObjectInjectionWorld, out cameraEntity))
-                {
-                    Debug.Log($"Нашёл игрока: {cameraEntity.Index}");
-                    found = true;
-                }
-                else
-                {
-                    Debug.Log($"Не нашёл игрока");
-                    found = false;
-                    return;
-                }
-            }
-            
-            // if (entityManager.HasComponent<LocalTransform>(cameraEntity))
-            // {
-            //     var t = entityManager.GetComponentData<LocalTransform>(cameraEntity);
-            //     transform.position = t.Position;
-            //     transform.rotation = t.Rotation;
-            // }
-            
-            if (entityManager.HasComponent<LocalToWorld>(cameraEntity))
-            {
-                var t = entityManager.GetComponentData<LocalToWorld>(cameraEntity);
-                transform.position = t.Position;
-                transform.rotation = t.Rotation;
-            }
+            if (_anchor == null)
+                return;
+
+            // PlayerView already interpolates, so just copy position/rotation
+            transform.position = _anchor.position;
+            transform.rotation = _anchor.rotation;
         }
     }
-
 }

@@ -1,31 +1,37 @@
 ﻿using Unity.Entities;
 using Unity.Physics;
 using Unity.Mathematics;
-using Unity.Transforms;
 using UnityEngine;
 
 namespace FPSCore.Test
 {
     public class GroundAuthoring : MonoBehaviour
     {
-        public float width = 10f;
-        public float length = 10f;
+        [SerializeField] private float _width = 10f;
+        [SerializeField] private float _length = 10f;
+        [SerializeField] private float _thickness = 0.1f;
 
+        public float Width => _width;
+        public float Length => _length;
+        public float Thickness => _thickness;
     }
     
     public class GroundBaker : Baker<GroundAuthoring>
     {
+        private const float BevelRadius = 0.01f;
+
         public override void Bake(GroundAuthoring authoring)
         {
-            var entity = GetEntity(TransformUsageFlags.None); // Static
+            // Use Renderable for static physics bodies
+            var entity = GetEntity(TransformUsageFlags.Renderable);
 
-            // 1. Создаём BoxCollider
+            // Create BoxCollider
             var boxGeometry = new BoxGeometry
             {
                 Center = float3.zero,
-                Size = new float3(authoring.width, 0.1f, authoring.length),
+                Size = new float3(authoring.Width, authoring.Thickness, authoring.Length),
                 Orientation = quaternion.identity,
-                BevelRadius = 0f
+                BevelRadius = BevelRadius
             };
 
             var filter = new CollisionFilter
@@ -37,21 +43,11 @@ namespace FPSCore.Test
 
             var collider = Unity.Physics.BoxCollider.Create(boxGeometry, filter);
 
-            // 2. Добавляем PhysicsCollider
+            // Add PhysicsCollider - this is all that's needed for a static body
             AddComponent(entity, new PhysicsCollider { Value = collider });
-
-            // 3. Добавляем PhysicsMass с InverseMass = 0 (Static)
-            var mass = PhysicsMass.CreateKinematic(collider.Value.MassProperties);
-            AddComponent(entity, mass);
-
-            // 4. Добавляем LocalTransform
-            var transform = authoring.transform;
-            AddComponent(entity, new LocalTransform
-            {
-                Position = transform.position,
-                Rotation = transform.rotation,
-                Scale = transform.localScale.x
-            });
+            
+            // Add physics world index for proper simulation
+            AddSharedComponent(entity, new PhysicsWorldIndex());
         }
     }
 }

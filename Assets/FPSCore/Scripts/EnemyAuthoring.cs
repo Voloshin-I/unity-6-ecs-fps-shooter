@@ -5,7 +5,9 @@ namespace FPSCore
 {
     public class EnemyAuthoring : MonoBehaviour
     {
-        public int health = 10;
+        [SerializeField] private int _health = 10;
+
+        public int Health => _health;
     }
 
     public class EnemyBaker : Baker<EnemyAuthoring>
@@ -14,7 +16,7 @@ namespace FPSCore
         {
             var entity = GetEntity(TransformUsageFlags.Dynamic);
             AddComponent(entity, new EnemyTag());
-            AddComponent(entity, new Health { Value = authoring.health });
+            AddComponent(entity, new Health { Value = authoring.Health });
         }
     }
 }

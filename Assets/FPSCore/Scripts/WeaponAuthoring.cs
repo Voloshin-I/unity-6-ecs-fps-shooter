@@ -5,8 +5,11 @@ namespace FPSCore
 {
     public class WeaponAuthoring : MonoBehaviour
     {
-        public float range = 100f;
-        public int damage = 1;
+        [SerializeField] private float _range = 100f;
+        [SerializeField] private int _damage = 1;
+
+        public float Range => _range;
+        public int Damage => _damage;
     }
 
     public class WeaponBaker : Baker<WeaponAuthoring>
@@ -14,7 +17,7 @@ namespace FPSCore
         public override void Bake(WeaponAuthoring authoring)
         {
             var entity = GetEntity(TransformUsageFlags.Dynamic);
-            AddComponent(entity, new Weapon { Range = authoring.range, Damage = authoring.damage });
+            AddComponent(entity, new Weapon { Range = authoring.Range, Damage = authoring.Damage });
             // Tag so systems can find loose weapon entities in the world
             AddComponent(entity, new WeaponTag());
         }

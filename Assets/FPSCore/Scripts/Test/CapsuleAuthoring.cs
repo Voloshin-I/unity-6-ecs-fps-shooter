@@ -1,7 +1,6 @@
 ﻿using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
-using Unity.Transforms;
 using UnityEngine;
 using CapsuleCollider = Unity.Physics.CapsuleCollider;
 
@@ -9,13 +8,20 @@ namespace FPSCore.Test
 {
     public class CapsuleAuthoring : MonoBehaviour
     {
-        public float mass = 1f;
-        public float radius = 0.5f;
-        public float height = 2f;
+        [SerializeField] private float _mass = 1f;
+        [SerializeField] private float _radius = 0.5f;
+        [SerializeField] private float _height = 2f;
+
+        public float Mass => _mass;
+        public float Radius => _radius;
+        public float Height => _height;
     }
     
     public class PlayerCapsuleBaker : Baker<CapsuleAuthoring>
     {
+        private const float HeightHalfMultiplier = 0.5f;
+        private const float GravityFactor = 1f;
+
         public override void Bake(CapsuleAuthoring authoring)
         {
             var entity = GetEntity(TransformUsageFlags.Dynamic);
@@ -23,9 +29,9 @@ namespace FPSCore.Test
             // 1. Создаём CapsuleCollider
             var capsuleGeometry = new CapsuleGeometry
             {
-                Vertex0 = new float3(0, -authoring.height * 0.5f, 0),
-                Vertex1 = new float3(0, authoring.height * 0.5f, 0),
-                Radius = authoring.radius
+                Vertex0 = new float3(0, -authoring.Height * HeightHalfMultiplier, 0),
+                Vertex1 = new float3(0, authoring.Height * HeightHalfMultiplier, 0),
+                Radius = authoring.Radius
             };
 
             var filter = new CollisionFilter
@@ -41,14 +47,14 @@ namespace FPSCore.Test
             AddComponent(entity, new PhysicsCollider { Value = collider });
 
             // 3. Создаём PhysicsMass с заморозкой вращения по X и Z
-            var mass = PhysicsMass.CreateDynamic(collider.Value.MassProperties, authoring.mass);
+            var mass = PhysicsMass.CreateDynamic(collider.Value.MassProperties, authoring.Mass);
             mass.InverseInertia = new float3(0f, mass.InverseInertia.y, 0f); // Freeze X/Z
 
             AddComponent(entity, mass);
 
             // 4. Добавляем Velocity и Gravity
             AddComponent(entity, new PhysicsVelocity());
-            AddComponent(entity, new PhysicsGravityFactor { Value = 1f });
+            AddComponent(entity, new PhysicsGravityFactor { Value = GravityFactor });
 
             // 5. Устанавливаем позицию из Transform
             var transform = authoring.transform;
@@ -58,9 +64,6 @@ namespace FPSCore.Test
                 Rotation = transform.rotation,
                 Scale = transform.localScale.x
             });
-
-
         }
     }
-
 }

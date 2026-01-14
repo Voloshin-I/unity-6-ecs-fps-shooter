@@ -1,100 +1,104 @@
 ﻿using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
-// using UnityEngine;
-// using CapsuleCollider = Unity.Physics.CapsuleCollider;
+using UnityEngine;
+using CapsuleCollider = UnityEngine.CapsuleCollider;
 
 namespace FPSCore
 {
-    public class CharacterAuthoring : UnityEngine.MonoBehaviour
+    /// <summary>
+    /// Player authoring for FPS character.
+    /// Creates physics capsule, freezes all rotation, adds gameplay components.
+    /// For NPCs, create a similar authoring without PlayerTag.
+    /// </summary>
+    public class PlayerAuthoring : MonoBehaviour
     {
-        public int health = 100;
-        public float moveSpeed = 5f;
-        public float lookSpeed = 1f;
+        [Header("Movement")]
+        [SerializeField] private float _moveSpeed = 5f;
+        [SerializeField] private float _lookSpeed = 2f;
+
+        [Header("Physics")]
+        [SerializeField] private float _mass = 1f;
+        [SerializeField] private float _radius = 0.5f;
+        [SerializeField] private float _height = 2f;
+
+        public float MoveSpeed => _moveSpeed;
+        public float LookSpeed => _lookSpeed;
+        public float Mass => _mass;
+        public float Radius => _radius;
+        public float Height => _height;
     }
 
-    public class PlayerBaker : Baker<CharacterAuthoring>
+    public class PlayerBaker : Baker<PlayerAuthoring>
     {
-        public override void Bake(CharacterAuthoring authoring)
+        private const float LinearDamping = 0.1f;
+        private const float AngularDamping = 0f;
+        private const float GravityFactor = 1f;
+
+        public override void Bake(PlayerAuthoring authoring)
         {
-            // var entity = GetEntity(TransformUsageFlags.Dynamic);
-            // AddComponent(entity, new PlayerTag());
-            // AddComponent(entity, new Health { Value = authoring.health });
-            // AddComponent(entity, new Movement { MoveSpeed = authoring.moveSpeed, LookSpeed = authoring.lookSpeed });
-            // AddComponent(entity, new WeaponHolder { WeaponEntity = Entity.Null });
-            
             var entity = GetEntity(TransformUsageFlags.Dynamic);
-            
-                //var entity = GetEntity(TransformUsageFlags.Dynamic);
 
-            // Создаём массу с разрешённой инерцией только по Y
-            var mass = PhysicsMass.CreateDynamic(MassProperties.UnitSphere, 1f);
-            mass.InverseInertia = new Unity.Mathematics.float3(0f, mass.InverseInertia.y, 0f); // X и Z заморожены
+            // =============================
+            // 1. Create capsule collider (centered, like Unity's capsule mesh)
+            // =============================
+            PhysicsCollider collider = CreateCapsuleCollider(authoring);
+            AddComponent(entity, collider);
 
-            AddComponent(entity, mass);
+            // =============================
+            // 2. Create dynamic physics mass with ALL rotation frozen
+            // =============================
+            var physicsMass = PhysicsMass.CreateDynamic(collider.MassProperties, authoring.Mass);
+            // Freeze ALL rotation - CharacterMovementSystem handles yaw manually
+            physicsMass.InverseInertia = float3.zero;
+            AddComponent(entity, physicsMass);
 
-            // --- 1. Создаём CapsuleCollider ---
-            // BlobAssetReference<Collider> collider = CapsuleCollider.Create(new CapsuleGeometry
-            //     {
-            //         Vertex0 = new float3(0, 0.5f, 0),
-            //         Vertex1 = new float3(0, 1.5f, 0),
-            //         Radius = 0.5f
-            //     },
-            //     new CollisionFilter
-            //     {
-            //         BelongsTo = ~0u,
-            //         CollidesWith = ~0u,
-            //         GroupIndex = 0
-            //     });
-                
-            // var collider = CapsuleCollider.Create(
-            //     new float3(0, authoring.radius, 0),
-            //     new float3(0, authoring.height - authoring.radius, 0),
-            //     authoring.radius
-            // );
+            // =============================
+            // 3. Add required physics components
+            // =============================
+            AddComponent(entity, new PhysicsVelocity());
+            AddComponent(entity, new PhysicsGravityFactor { Value = GravityFactor });
+            AddComponent(entity, new PhysicsDamping { Linear = LinearDamping, Angular = AngularDamping });
+            AddSharedComponent(entity, new PhysicsWorldIndex());
 
-            // AddComponent(entity, new PhysicsCollider { Value = collider });
-            //
-            // // --- 2. Создаём физическую массу (динамическое тело) ---
-            // // var mass = PhysicsMass.CreateDynamic(collider.Value.MassProperties, 1);
-            // var massProperties = collider.Value.MassProperties;
-            // bool invalidMass =
-            //     massProperties.Volume <= 0 ||
-            //     math.all(massProperties.MassDistribution.InertiaTensor == 0);
-            // if (invalidMass)
-            // {
-            //     massProperties = new MassProperties
-            //     {
-            //         MassDistribution = new MassDistribution
-            //         {
-            //             Transform = RigidTransform.identity,
-            //             InertiaTensor = new float3(1, 1, 1)
-            //         },
-            //         Volume = 1,
-            //         AngularExpansionFactor = 1
-            //     };
-            // }
-            // var mass = PhysicsMass.CreateDynamic(massProperties, 1f);
+            // =============================
+            // 4. Add character components (shared by all characters)
+            // =============================
+            AddComponent(entity, new CharacterInput());
+            AddComponent(entity, new Movement 
+            { 
+                MoveSpeed = authoring.MoveSpeed, 
+                LookSpeed = authoring.LookSpeed 
+            });
 
-            // Зафиксировать вращение по X и Z, оставить только Y
-            // mass.InverseInertia.x = 0;
-            // mass.InverseInertia.z = 0;
-
-            // AddComponent(entity, mass);
-
-            // --- 3. Добавляем вспомогательные физические компоненты ---
-            // AddComponent<PhysicsVelocity>(entity);
-            // AddComponent(entity, new PhysicsDamping
-            // {
-            //     Linear = 0.01f,
-            //     Angular = 0.05f
-            // });
-
-            // --- 4. Добавляем пользовательские компоненты игры ---
+            // =============================
+            // 5. Add player-specific tag
+            // =============================
             AddComponent(entity, new PlayerTag());
-            AddComponent(entity, new Movement { MoveSpeed = authoring.moveSpeed, LookSpeed = authoring.lookSpeed });
-            AddComponent(entity, new Health { Value = authoring.health });
-            // AddComponent(entity, new PhysicsGravityFactor { Value = 1f });
+        }
+
+        private PhysicsCollider CreateCapsuleCollider(PlayerAuthoring authoring)
+        {
+            float halfHeight = authoring.Height * .5f;
+            float vertexOffset = halfHeight - authoring.Radius;
+
+            var capsuleGeometry = new CapsuleGeometry
+            {
+                Vertex0 = new float3(0, -vertexOffset, 0),
+                Vertex1 = new float3(0, vertexOffset, 0),
+                Radius = authoring.Radius
+            };
+
+            var filter = new CollisionFilter
+            {
+                BelongsTo = ~0u,
+                CollidesWith = ~0u,
+                GroupIndex = 0
+            };
+
+            var collider = Unity.Physics.CapsuleCollider.Create(capsuleGeometry, filter);
+            PhysicsCollider result = new PhysicsCollider { Value = collider };
+            return result;
         }
     }
 }
