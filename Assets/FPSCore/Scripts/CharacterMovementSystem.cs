@@ -88,14 +88,14 @@ namespace FPSCore
                     var body = physicsWorld.Bodies[rigidBodyIndex];
                     if (body.Collider.IsCreated && math.lengthsq(desiredVelocity) > InputDeadzone)
                     {
-                        float3 slideVel = CalculateSlideVelocity(
+                        CalculateSlideVelocity(
                             ref physicsWorld,
                             in body,
                             rigidBodyIndex,
                             in desiredVelocity,
-                            movement.MoveSpeed
+                            movement.MoveSpeed,
+                            out finalHorizontalVel
                         );
-                        finalHorizontalVel = slideVel;
                     }
                 }
 
@@ -123,14 +123,14 @@ namespace FPSCore
         }
 
         [BurstCompile]
-        private static float3 CalculateSlideVelocity(
+        private static void CalculateSlideVelocity(
             ref PhysicsWorld physicsWorld,
             in RigidBody body,
             int rigidBodyIndex,
             in float3 desiredVelocity,
-            float maxSpeed)
+            float maxSpeed,
+            out float3 result)
         {
-            float3 moveDir = math.normalize(desiredVelocity);
             float speed = math.length(desiredVelocity);
             
             unsafe
@@ -185,13 +185,14 @@ namespace FPSCore
                     }
                     
                     hits.Dispose();
-                    return new float3(resultVelocity.x, 0, resultVelocity.z);
+                    result = new float3(resultVelocity.x, 0, resultVelocity.z);
+                    return;
                 }
                 
                 hits.Dispose();
             }
             
-            return desiredVelocity;
+            result = desiredVelocity;
         }
     }
 }
