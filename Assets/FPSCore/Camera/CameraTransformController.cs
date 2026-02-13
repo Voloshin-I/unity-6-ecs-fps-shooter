@@ -1,6 +1,6 @@
-﻿using UnityEngine;
+using UnityEngine;
 
-namespace FPSCore
+namespace FPSCore.Camera
 {
     /// <summary>
     /// Simple camera follower. Attach to the main camera.

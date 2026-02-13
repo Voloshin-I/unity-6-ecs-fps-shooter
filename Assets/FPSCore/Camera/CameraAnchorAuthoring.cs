@@ -1,7 +1,7 @@
 using Unity.Entities;
 using UnityEngine;
 
-namespace FPSCore
+namespace FPSCore.Camera
 {
     public class CameraAnchorAuthoring : MonoBehaviour { }
     

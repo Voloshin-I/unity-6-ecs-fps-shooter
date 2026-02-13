@@ -268,7 +268,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 359344832}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f25750d824d14c9591b86a6481b22a53, type: 3}
+  m_Script: {fileID: 11500000, guid: c1dc26bc9b365fa4fa91f370484b72f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FPSCore.InputProxy
   _actions: {fileID: -944628639613478452, guid: f6e310134f92c4a4a82c8f09cddbb4e0, type: 3}
@@ -504,7 +504,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1182168437}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 83e93d8552114f58ba71c908cc63403b, type: 3}
+  m_Script: {fileID: 11500000, guid: 040191f54fe96a440b324e0e311767fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FPSCore.PlayerView
 --- !u!4 &1182168439
