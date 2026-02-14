@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.Collections;
+using UnityEngine;
 
 namespace FPSCore
 {
@@ -28,6 +29,27 @@ namespace FPSCore
 
             entity = entities[0];
             return true;
+        }
+        
+        public static void LinkChildren(this Transform parent, IBaker baker)
+        {
+            var entity = baker.GetEntity(parent.gameObject, TransformUsageFlags.Dynamic);
+            DynamicBuffer<LinkedEntityGroup> group = baker.AddBuffer<LinkedEntityGroup>(entity);
+            group.Add(entity);
+            foreach (Transform child in parent)
+            {
+                child.LinkChildren(baker, group);
+            }
+        }
+        
+        public static void LinkChildren(this Transform parent, IBaker baker, DynamicBuffer<LinkedEntityGroup> group)
+        {
+            var entity = baker.GetEntity(parent.gameObject, TransformUsageFlags.Dynamic);
+            group.Add(entity);
+            foreach (Transform child in parent)
+            {
+                child.LinkChildren(baker, group);
+            }
         }
     }
 }

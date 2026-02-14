@@ -12,8 +12,7 @@ namespace FPSCore.Movement
     {
         private void Start()
         {
-            if (World.DefaultGameObjectInjectionWorld != null)
-                _entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+            Initialize();
         }
 
         private void Update()
@@ -28,23 +27,16 @@ namespace FPSCore.Movement
         {
             if (_initialized)
                 return;
-
+            
             if (World.DefaultGameObjectInjectionWorld == null)
                 return;
             
-            if (_playerEntity == Entity.Null
-                && !EntityUtils.TryFindEntityWith<PlayerTag>(
-                    World.DefaultGameObjectInjectionWorld, out _playerEntity))
-                return;
-
-            // NOTE: not sure if this check is required
             _entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
-            if (!_entityManager.Exists(_playerEntity))
-            {
-                _playerEntity = Entity.Null;
+            EntityQuery query = _entityManager.CreateEntityQuery(typeof(PlayerTag));
+            if (query.IsEmptyIgnoreFilter)
                 return;
-            }
-
+            
+            _playerEntity = query.GetSingletonEntity();
             if (_playerEntity != Entity.Null)
             {
                 _initialized = true;
